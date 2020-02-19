@@ -1,0 +1,26 @@
+
+Step0: setup environment variables 
+
+    export controlm_password=
+    
+    controlm needs us to first use either of below to get a token
+        requests.post(login_url, json={"username": user, "password": xyz) 
+        requests.Session().post(login_url, json={"username": user, "password": xyz) 
+        
+    token will then be used to update session.headers
+    
+ 
+
+Step1: create an api instance
+    
+    controlm_api = ControlmAPI("kbhkumar")
+    Method1: Use API Key with parameter named 'api-key'
+    Method2: Use Token with session header bearer
+  
+ Step2: use api wrapper
+
+    controlm_api.get_jobs_status(limit=5)
+    controlm_api.get_jobname_status(jobname='BIHAU_T1_SRC_AMB_VW_PRD_VAL')
+    controlm_api.get_application_jobs_status(application='BIH_SOBIH')
+    controlm_api.get_depoy_jobs(format='xml', ctm='DCMAU02', folder='BIH_FIN10_IN_EOD')
+    controlm_api.logout()

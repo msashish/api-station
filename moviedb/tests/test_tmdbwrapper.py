@@ -1,5 +1,5 @@
 from pytest import fixture
-from moviedb.tmdbwrapper.tv import TV
+from tmdbwrapper.tv import TV
 import vcr
 
 
@@ -15,6 +15,7 @@ def tv_keys():
 def test_tv_info(tv_keys):
     tv = TV(1396)
     response = tv.info()
+    print(response['last_episode_to_air'])
     assert isinstance(response, dict)
     assert response['id'] == 1396
     assert set(tv_keys).issubset(response.keys())
@@ -23,7 +24,7 @@ def test_tv_info(tv_keys):
 @vcr.use_cassette('tests/vcr_cassettes/tv-top-rated.yml')
 def test_tv_top_rated(tv_keys):
     response = TV.top_rated()
+    print(response['results'][0])
     assert isinstance(response, dict)
     assert isinstance(response['results'], list)
     assert set(tv_keys).issubset(response['results'][0].keys())
-

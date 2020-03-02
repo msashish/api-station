@@ -15,4 +15,3 @@ if TMDB_TOKEN is None:
 session = requests.Session()
 session.headers.update({"Authorization": f"Bearer {TMDB_TOKEN}"})
 base_url = 'https://api.themoviedb.org/3/'
-

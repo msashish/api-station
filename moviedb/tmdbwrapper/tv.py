@@ -16,3 +16,9 @@ class TV:
         top_rated_url = f"{base_url}tv/top_rated"
         response = session.get(top_rated_url)
         return response.json()
+
+    @staticmethod
+    def popular():
+        popular_url = f"{base_url}tv/popular"
+        response = session.get(popular_url)
+        return response.json()

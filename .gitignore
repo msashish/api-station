@@ -1,0 +1,9 @@
+venv/
+.idea/
+moviedb/tests/__pycache__/
+moviedb/tmdbwrapper/__pycache__/
+controlm/.idea/
+moviedb/.idea/
+moviedb/.coverage
+moviedb/tests/vcr_cassettes/
+

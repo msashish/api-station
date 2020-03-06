@@ -1,6 +1,6 @@
 import unittest
 
-from api.controlm_api import ControlmAPI
+from controlm.api.controlm_api import ControlmAPI
 
 
 # set controlm password in environment variable controlm_password

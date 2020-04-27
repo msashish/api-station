@@ -15,13 +15,13 @@ class TestControlmAPI(unittest.TestCase):
         self.controlm_api.get_jobs_status(limit=5)
 
     def test_get_jobname_status(self):
-        self.controlm_api.get_jobname_status(jobname='give job name here')
+        self.controlm_api.get_jobname_status(jobname='BIHAU_T1_SRC_AMB_VW_PRD_VAL')
 
     def test_get_application_jobs_status(self):
-        self.controlm_api.get_application_jobs_status(application='give application name here')
+        self.controlm_api.get_application_jobs_status(application='BIH_SOBIH')
 
     def test_get_deploy_jobs(self):
-        self.controlm_api.get_depoy_jobs(format='xml', ctm='ctm name', folder='give folder name')
+        self.controlm_api.get_depoy_jobs(format='xml', ctm='DCMAU02', folder='BIH_FIN10_IN_EOD')
 
     @classmethod
     def tearDownClass(cls) -> None:

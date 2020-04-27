@@ -19,7 +19,8 @@ Step2: Explore and code for list of end points:
 
 Step3: How to test ? We use pytest framework here and not unittest
 
-    pwd --> on moviedb
+    source /Users/sheelava/Documents/main/github/api-station/venv/bin/activate (if not already done)
+    pwd --> cd moviedb
     prox --> to turn on proxy. Else will get socket.gaierror
     delete files in vcr_cassettes if it throws error
     python example.py

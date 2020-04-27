@@ -1,5 +1,5 @@
 from pytest import fixture
-from tmdbwrapper.tv import TV
+from moviedb.tmdbwrapper.tv import TV
 import vcr
 
 

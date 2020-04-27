@@ -6,7 +6,7 @@ import pprint
 
 class ControlmAPI:
 
-    def __init__(self, user, url="your/url/here"):
+    def __init__(self, user, url="https://dctmemau01.apps.anz:8443/automation-api/"):
         self.url = url
         self.session = requests.Session()
 

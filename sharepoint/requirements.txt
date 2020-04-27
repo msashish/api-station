@@ -1,0 +1,4 @@
+requests
+requests_ntlm
+Office365-REST-Python-Client
+pytest

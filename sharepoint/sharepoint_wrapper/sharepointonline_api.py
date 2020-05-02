@@ -39,7 +39,7 @@ class SharepointOnlineApi:
         os.environ['https_proxy'] = _proxy
 
     def set_headers(self, email, password):
-        print('Step0: Setting header to http requests for user  ', email)
+        print('Setting header to http requests for user ', email)
         try:
             headers = {'Content-Type': 'application/x-www-form-urlencoded'}
 
@@ -55,7 +55,7 @@ class SharepointOnlineApi:
             headers.update({'Content-Type': 'application/json; odata=verbose',
                             'Accept': 'application/json; odata=verbose'})
 
-            print("Header successfully updated with rtFa and FedAuth cookies")
+            print("    Success")
         except Exception as e:
             print(str(e))
             raise e
@@ -63,6 +63,7 @@ class SharepointOnlineApi:
         return headers
 
     def get_security_token(self, headers, email, password):
+        print("    Step1: Getting security token using user authorization")
         auth_url = "https://login.microsoftonline.com/extSTS.srf"
         sharepoint_online_auth_body = """<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope"
                                 xmlns:a="http://www.w3.org/2005/08/addressing"
@@ -98,18 +99,17 @@ class SharepointOnlineApi:
         sharepoint_online_auth_body = sharepoint_online_auth_body.format(email, password, self.sharepoint_url)
 
         # Let's make call to auth url to get the security token
-        print("Step1: Getting security token using user authorization")
         response = requests.post(auth_url, data=sharepoint_online_auth_body, headers=headers)
         s = str(response.content)
         # start = [pos for pos in range(len(s)) if s[pos:].startswith('<wsse:BinarySecurityToken Id="Compact0">')][0]
         start = [pos for pos in range(len(s)) if s[pos:].startswith(BST_START_TAG)][0]
         finish = [pos for pos in range(len(s)) if s[pos:].startswith(BST_END_TAG)][0]
         # security_token = s[start + 40:finish]
-        print("Success in getting security token. Not over yet ....")
+        print("    Success")
         return s[start + 135:finish]
 
     def get_cookies(self, headers, security_token):
-        print("Step2: Getting FedAuth and rtFa cookies using security token")
+        print("    Step2: Getting FedAuth and rtFa cookies using security token")
         url = self.sharepoint_url + '/_forms/default.aspx?wa=wsignin1.0'
         response = requests.post(url, data=security_token, headers=headers)
         _Fedauth = 'FedAuth={}'.format(response.cookies['FedAuth'])
@@ -120,14 +120,14 @@ class SharepointOnlineApi:
         title_url = self.sharepoint_url + '/sites/DLE-IA-Forum/_api/web/title'
         response = requests.get(title_url, headers=self.header)
         title = response.json()["d"]["Title"]
-        print("Title is : ", title)
+        print("    Title is : ", title)
 
     def get_files_in_folder(self, folder_name):
         full_folder = "Shared Documents/" + folder_name
         files_url = self.sharepoint_url + '/sites/DLE-IA-Forum/_api/web/GetFolderByServerRelativeUrl(' + "'" + full_folder + "'" + ')/Files'
         response = requests.get(files_url, headers=self.header)
         for file in response.json()["d"]["results"]:
-            print("Files in folder {}  : {}".format(full_folder, file["Name"]))
+            print("    Files in folder {}  : {}".format(full_folder, file["Name"]))
 
 
 if __name__ == '__main__':

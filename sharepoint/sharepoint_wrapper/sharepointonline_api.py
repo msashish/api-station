@@ -1,6 +1,8 @@
 import requests
 import os
 
+from pathlib import Path
+
 BST_START_TAG =  """<wsse:BinarySecurityToken Id="Compact0" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">"""
 BST_END_TAG = '</wsse:BinarySecurityToken>'
 
@@ -129,9 +131,18 @@ class SharepointOnlineApi:
         for file in response.json()["d"]["results"]:
             print("    Files in folder {}  : {}".format(full_folder, file["Name"]))
 
+    def download_file_from_folder(self, folder_name, file_name):
+        full_folder = "Shared Documents/" + folder_name
+        output_file_name = Path("P:\My Documents\DLE\github", file_name)
+        file_url = self.sharepoint_url + '/sites/DLE-IA-Forum/_api/web/GetFolderByServerRelativeUrl(' + "'" + full_folder + "'" + ')/Files(' + "'" + file_name + "'" + ')/$value'
+        response = requests.get(file_url, headers=self.header)
+        with open(output_file_name, "wb") as f:
+            f.write(response.content)
+        print("    File {} downloaded at {}".format(file_name, output_file_name))
 
 if __name__ == '__main__':
     sp_online_api = SharepointOnlineApi(url="https://anz.sharepoint.com")
     print("Now running few inquiries on sharepoint online")
     sp_online_api.get_title()
     sp_online_api.get_files_in_folder('test')
+    sp_online_api.download_file_from_folder('test', 'IA_CAP_to_BIH_Batch_AU.xlsx')

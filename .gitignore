@@ -9,3 +9,4 @@ moviedb/tests/vcr_cassettes/
 ../.idea
 ../moviedb/tmdbwrapper/__pycache__/
 ../moviedb/__pycache__/
+../.idea/api-station.iml

@@ -1,27 +1,39 @@
 import requests
 import os
-import json
-from sys import argv
-import xml.etree.ElementTree as etree
 
 
 class SharepointOnlineApi:
     """
-        Attempt using user auth for sharepoint online ex: https://anz.sharepoint.com/sites/DLE-IA-Forum
+        Work with sharepoint online programatically ex: https://anz.sharepoint.com/sites/DLE-IA-Forum
+        Features covered:
+            Get title of a sharepoint online page
+            List files in a particular folder
+        pre-requisite
+            user should have access to sharepoint online
+            set user=<LAN id>
+            set secret=<password>
+            set email=<email id> (Can be eliminated if we get a service account)
+            I am using proxy https://gblproxy.lb.service.anz:80
     """
 
-    def __init__(self, url="https://anz.sharepoint.com/sites/DLE-IA-Forum"):
+    def __init__(self, url="https://anz.sharepoint.com"):
         self.sharepoint_url = url
-        user = os.environ.get('user', None)
-        secret = os.environ.get('secret', None)
-        self.header = self.set_headers(user, secret)
-        print(self.header)
+        _user = os.environ.get('user', None)
+        _secret = os.environ.get('secret', None)
+        _email = os.environ.get('email', None)
+        if _user is None or _secret is None or _email is None:
+            print("Essential environment variables are not set. Please set user, secret, and email")
+            raise Exception
+        self._proxy = "https://{}:{}@gblproxy.lb.service.anz:80".format(_email, _secret)
+        self.header = self.set_headers(_user, _secret)
 
     def set_headers(self, user_name, password):
         try:
-            print('user = ', user_name)
+            print('Step0: Setting header to http requests for user  ', user_name)
+            os.environ['http_proxy'] = self._proxy
+            os.environ['https_proxy'] = self._proxy
             auth_url = "https://login.microsoftonline.com/extSTS.srf"
-            headers = {'content-type': 'application/x-www-form-urlencoded'}
+            headers = {'Content-Type': 'application/x-www-form-urlencoded'}
             sharepoint_online_auth_body = """<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope"
                         xmlns:a="http://www.w3.org/2005/08/addressing"
                         xmlns:u="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
@@ -57,140 +69,58 @@ class SharepointOnlineApi:
 
             # Let's make call to auth url to get the security token
             print("Step1: Getting security token using user authorization")
+            #print(sharepoint_online_auth_body)
             response = requests.post(auth_url, data=sharepoint_online_auth_body, headers=headers)
-            print(response.content)
-            print(response.status_code == requests.codes.ok)
             s = str(response.content)
-            if [pos for pos in range(len(s)) if s[pos:].startswith('<wsse:BinarySecurityToken Id="Compact0">')] == []:
-                raise Exception
-            start = [pos for pos in range(len(s)) if s[pos:].startswith('<wsse:BinarySecurityToken Id="Compact0">')][0]
+            print("Success in getting security token. Not over yet ....")
+            #start = [pos for pos in range(len(s)) if s[pos:].startswith('<wsse:BinarySecurityToken Id="Compact0">')][0]
+            start_tag = """<wsse:BinarySecurityToken Id="Compact0" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">"""
+            start = [pos for pos in range(len(s)) if s[pos:].startswith(start_tag)][0]
             finish = [pos for pos in range(len(s)) if s[pos:].startswith('</wsse:BinarySecurityToken>')][0]
-            security_token = s[start + 40:finish]
-            print("security_token = ", str(security_token))
+            #security_token = s[start + 40:finish]
+            security_token = s[start + 135:finish]
 
             # update the security token into header
             sec_dict = {'Authorization': 'Bearer' + security_token}
             headers.update(sec_dict)
 
-            # Now, Lets fetch the cookies to make Call to SharePoint Online
-            print("Step2: Getting cookies using security token")
+            # Now, Lets fetch the cookies & update header
+            print("Step2: Getting FedAuth and rtFa cookies using security token")
             url = self.sharepoint_url + '/_forms/default.aspx?wa=wsignin1.0'
             response = requests.post(url, data=security_token, headers=headers)
             _Fedauth = 'FedAuth={}'.format(response.cookies['FedAuth'])
             _rtFa = 'rtFa={}'.format(response.cookies['rtFa'])
-            print("FedAuth cookie: ", _Fedauth)
-            print("rtFa cookie: ", _rtFa)
             _FinalDict = {'Cookie': _Fedauth + ';' + _rtFa}
             headers.update(_FinalDict)
-            headers.update(_FinalDict)
-            #added below inorder to get response in json format
+
+            # Update header so that we get response in json
             headers.update({'Content-Type': 'application/json; odata=verbose',
                             'Accept': 'application/json; odata=verbose'})
             print("Header successfully updated with rtFa and FedAuth cookies")
-
-            # Calling the Sharepoint api Context REST Api using cookies obtained to get X-RequestDigest
-            # url = self.sharepoint_url + """/_api/Contextinfo"""
-            # response = requests.post(url, headers=headers)
-            # s = str(response.content)
-            #
-            # start = [pos for pos in range(len(s)) if s[pos:].startswith('<d:FormDigestValue>')][0]
-            # finish = [pos for pos in range(len(s)) if s[pos:].startswith('</d:FormDigestValue>')][0]
-            # digest = s[start + 19:finish]
-            #
-            # _FinalDict = {'X-RequestDigest': digest}
-            # headers.update(_FinalDict)
-            # _FinalDict = {'content-type': 'application/json'}
-            # headers.update(_FinalDict)
-
         except Exception as e:
             print(str(e))
             raise e
 
         return headers
 
-    def get_data_from_SPOnline(self, ListName, TopLevelUrl, ServiceUrlWithFilters, path):
-        _DataDict = {}
-        try:
-            # Now, Getting the List Information from SharePoint Online
-            url = TopLevelUrl + ServiceUrlWithFilters
-            url = url.format(ListName)
-            print(url)
-            _index = 0
-            ChildDict = {}
-            response = requests.get(url, headers=self.header)
-            sxml = str(response.content)
-            sxml = sxml[2:len(sxml) - 1]  # This is to avoid any ' coming in xml
-            print(path)
-            target = open(path, 'w')
-            target.write(sxml)
-            tree = etree.parse(path)
-            root = tree.getroot()
-            for child in root:
-                if str(child).find('entry') > 0:
-                    for child1 in child:
-                        if str(child1).find('content') > 0:
-                            ChildDict[str(_index)] = {}
-                            for child2 in child1[0]:
-                                val = {child2.tag.split('}')[1]: child2.text}
-                                ChildDict[str(_index)].update(val)
-                            _DataDict.update(ChildDict)
-                            _index += 1
-        except Exception as e:
-            print('getSPData ' + e)
-            # raise e
-        return _DataDict
-
-    def get_atom_feed_data_from_sponline(self, ListName, TopLevelUrl, ServiceUrlWithFilters):
-        _DataDict = {}
-        try:
-            # Now, Getting the List Information from SharePoint Online
-            url = TopLevelUrl + ServiceUrlWithFilters
-            url = url.format(ListName)
-            print(url)
-            _index = 0
-            ChildDict = {}
-            response = requests.get(url, headers=self.header)
-            sxml = str(response.content)
-            sxml = sxml[2:len(sxml) - 1]  # This is to avoid any ' coming in xml
-            tree = etree.fromstring(sxml)
-            for child in tree:
-                if (str(child).find('entry') > 0):
-                    for child1 in child:
-                        if (str(child1).find('content') > 0):
-                            for child2 in child1:
-                                if (str(child2).find('properties')):
-                                    ChildDict[str(_index)] = {}
-                                    for child3 in child2:
-                                        val = {child3.tag.replace(
-                                            '{http://schemas.microsoft.com/ado/2007/08/dataservices}', ''): child3.text}
-                                        ChildDict[str(_index)].update(val)
-                                    _DataDict.update(ChildDict)
-                                    _index += 1
-        except Exception as e:
-            print('getSPData ' + e)
-        return _DataDict
-
     def get_title(self):
-        title_url = self.sharepoint_url + '/_api/web/title'
+        title_url = self.sharepoint_url + '/sites/DLE-IA-Forum/_api/web/title'
         response = requests.get(title_url, headers=self.header)
-        title = response.content['d']['Title']
-        print(response.content)
+        title = response.json()["d"]["Title"]
         print("Title is : ", title)
 
     def get_files_in_folder(self, folder_name):
-        full_folder = 'Shared Documents/' + folder_name
-        files_url = self.sharepoint_url + '/_api/web/GetFolderByRelativeUrl(' + "'" + full_folder + "'" + ')/Files'
-        # Should be https://anz.sharepoint.com/sites/DLE-IA-Forum/_api/web/GetFolderByRelativeUrl('Shared Documents/test')/Files
-        print("files_url = " + files_url)
+        full_folder = "Shared Documents/" + folder_name
+        files_url = self.sharepoint_url + '/sites/DLE-IA-Forum/_api/web/GetFolderByServerRelativeUrl(' + "'" + full_folder + "'" + ')/Files'
+        # Should be https://anz.sharepoint.com/sites/DLE-IA-Forum/_api/web/GetFolderByServerRelativeUrl('Shared Documents/test')/Files
         response = requests.get(files_url, headers=self.header)
-        for file in response.content['d']['results']:
-            print("File name is : ", file['name'])
+        for file in response.json()["d"]["results"]:
+            print("Files in folder {}  : {}".format(full_folder, file["Name"]))
 
 
 if __name__ == '__main__':
-    sp_online_api = SharepointOnlineApi(url="https://anz.sharepoint.com/sites/DLE-IA-Forum")
+    #sp_online_api = SharepointOnlineApi(url="https://anz.sharepoint.com/sites/DLE-IA-Forum")
+    sp_online_api = SharepointOnlineApi(url="https://anz.sharepoint.com")
+    print("Now running few inquiries on sharepoint online")
     sp_online_api.get_title()
     sp_online_api.get_files_in_folder('test')
-    #top_level_url = "https://anz.sharepoint.com/sites/DLE-IA-Forum"
-    #_DataDict = sp_online_api.get_atom_feed_data_from_sponline(ListName="general", TopLevelUrl=top_level_url,
-    #                                                           ServiceUrlWithFilters="/sites/DLE-IA-Forum/_api/web/lists/getByTitle('{}')/Items")

@@ -32,4 +32,7 @@
     cd /Users/sheelava/Documents/main/github/api-station/sharepoint
     export user='----'
     export secret='----'
+    python sharepoint_wrapper/sharepointonline_api1.py
+    
+    export user, email, secret
     python sharepoint_wrapper/sharepointonline_api.py

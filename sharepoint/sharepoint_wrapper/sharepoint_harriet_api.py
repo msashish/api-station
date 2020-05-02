@@ -128,21 +128,20 @@ class SharepointOnlineApi:
         title = response.json()["d"]["Title"]
         print("    Title is : ", title)
 
-    def get_files_in_folder(self, folder_name):
+    def get_file_names_in_folder(self, folder_name):
         full_folder = "Shared Documents/" + folder_name
         files_url = self.sharepoint_url + '/sites/DLE-IA-Forum/_api/web/GetFolderByServerRelativeUrl(' + "'" + full_folder + "'" + ')/Files'
         response = requests.get(files_url, headers=self.header)
         for file in response.json()["d"]["results"]:
             print("    Files in folder {}  : {}".format(full_folder, file["Name"]))
 
-    def download_file_from_folder(self, folder_name, file_name):
+    def get_file_from_folder(self, folder_name, file_name):
         full_folder = "Shared Documents/" + folder_name
         output_file_name = Path("P:\My Documents\DLE\github", file_name)
         file_url = self.sharepoint_url + '/sites/DLE-IA-Forum/_api/web/GetFolderByServerRelativeUrl(' + "'" + full_folder + "'" + ')/Files(' + "'" + file_name + "'" + ')/$value'
         response = requests.get(file_url, headers=self.header)
         with open(output_file_name, "wb") as f:
             f.write(response.content)
-        #print("    File {} downloaded at {}".format(file_name, output_file_name))
         return output_file_name
 
     @staticmethod
@@ -151,12 +150,11 @@ class SharepointOnlineApi:
         args = argparse.Namespace()
         args.excel = input_excel
         args.base_path = output
-        print(args.excel)
         harriet.cli.main(args)
 
 
 if __name__ == '__main__':
     sp_online_api = SharepointOnlineApi(url="https://anz.sharepoint.com")
-    print("Now running few inquiries on sharepoint online")
-    input = sp_online_api.download_file_from_folder('test', 'IA_CAP_to_BIH_Batch_AU.xlsx')
+    #print("Now running few inquiries on sharepoint online")
+    input = sp_online_api.get_file_from_folder('test', 'IA_CAP_to_BIH_Batch_AU.xlsx')
     sp_online_api.call_harriet(input)

@@ -153,8 +153,42 @@ class SharepointOnlineApi:
         harriet.cli.main(args)
 
 
+def get_arguments() -> argparse.Namespace:
+    """ Return command line arguments."""
+
+    parser = argparse.ArgumentParser(
+        prog="python sharepoint_harriet_api.py",
+        usage="%(prog)s [-h] [--url] [--folder] [--ia]",
+    )
+
+    parser.add_argument(
+        "--url","-u",
+        dest='url',
+        type=str,
+        default="https://anz.sharepoint.com"
+    )
+    parser.add_argument(
+        "--folder", "-f",
+        dest='folder',
+        #default='test',
+        type=str,
+        help="folder name in sharepoint site"
+    )
+    parser.add_argument(
+        "--ia", "-ia",
+        dest='ia',
+        #defaukt='IA_CAP_to_BIH_Batch_AU.xlsx',
+        type=str,
+        help="IA file name"
+    )
+
+    return parser.parse_args()
+
+
 if __name__ == '__main__':
-    sp_online_api = SharepointOnlineApi(url="https://anz.sharepoint.com")
-    #print("Now running few inquiries on sharepoint online")
-    input = sp_online_api.get_file_from_folder('test', 'IA_CAP_to_BIH_Batch_AU.xlsx')
+    args = get_arguments()
+    sp_online_api = SharepointOnlineApi(url=args.url) #"https://anz.sharepoint.com"
+    print("Processing IA {} inside folder {} at sharepoint {} ".format(args.ia, args.folder, args.url))
+    #input = sp_online_api.get_file_from_folder('test', 'IA_CAP_to_BIH_Batch_AU.xlsx')
+    input = sp_online_api.get_file_from_folder(args.folder, args.ia)
     sp_online_api.call_harriet(input)

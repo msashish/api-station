@@ -28,11 +28,33 @@
     python sharepoint_wrapper/sharepoint_api2.py
     python sharepoint_wrapper/sharepoint_api3.py
 
-# run for sharepoint online:
-    cd /Users/sheelava/Documents/main/github/api-station/sharepoint
-    export user='----'
-    export secret='----'
-    python sharepoint_wrapper/sharepointonline_api1.py
+## Sharepoint wrapper for sharepoint O365 (online) 
+
+    Sharepoint O365/Online is the cloud variant and can be reached at https://anz.sharepoint.com
     
-    export user, email, secret
-    python sharepoint_wrapper/sharepointonline_api.py
+    Link to sample IA site https://anz.sharepoint.com/sites/DLE-IA-Forum
+    
+## Setup below variables 
+    
+    On Windows   - avoid quotes
+        set user=    (give your Global user id. For ex: sheelava)  
+        set email=   (give your email id. For ex: ashish.sheelavantar@anz.com)
+        set secret=  (give your password)
+        
+    On Mac/*nix
+        export user=  
+        export email=
+        export secret=
+
+## Run wrapper
+
+    python sharepointonline_api.py
+
+    Copy sharepoint_harriet_api.py to harriet root directory (along side harriet.sh) and then, 
+    python sharepoint_harriet_api.py -u "https://anz.sharepoint.com" -s "/sites/DLE-IA-Forum" -f "test" -ia "IA_CAP_to_BIH_Batch_AU.xlsx"
+
+## Pending improvements
+    avoid proxy
+    Try below libraries & reduce loc
+        Office365 --> https://pypi.org/project/Office365-REST-Python-Client/
+        O365

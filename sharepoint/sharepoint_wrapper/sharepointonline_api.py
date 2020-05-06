@@ -1,11 +1,12 @@
 import requests
 import os
+import urllib3
 
 from pathlib import Path
 
 BST_START_TAG =  """<wsse:BinarySecurityToken Id="Compact0" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">"""
 BST_END_TAG = '</wsse:BinarySecurityToken>'
-
+urllib3.disable_warnings()
 
 class SharepointOnlineApi:
     """
@@ -113,21 +114,22 @@ class SharepointOnlineApi:
     def get_cookies(self, headers, security_token):
         print("    Step2: Getting FedAuth and rtFa cookies using security token")
         url = self.sharepoint_url + '/_forms/default.aspx?wa=wsignin1.0'
-        response = requests.post(url, data=security_token, headers=headers)
+        #response = requests.post(url, data=security_token, headers=headers, cert=('ANZ_Global_SSL_Decryption_CA_v2.cer','sharepoint.cer','Global_CA.cer','Global_root.cer'))
+        response = requests.post(url, data=security_token, headers=headers, verify=False)
         _Fedauth = 'FedAuth={}'.format(response.cookies['FedAuth'])
         _rtFa = 'rtFa={}'.format(response.cookies['rtFa'])
         return {'Cookie': _Fedauth + ';' + _rtFa}
 
     def get_title(self):
         title_url = self.sharepoint_url + '/sites/DLE-IA-Forum/_api/web/title'
-        response = requests.get(title_url, headers=self.header)
+        response = requests.get(title_url, headers=self.header, verify=False)
         title = response.json()["d"]["Title"]
         print("    Title is : ", title)
 
     def get_files_in_folder(self, folder_name):
         full_folder = "Shared Documents/" + folder_name
         files_url = self.sharepoint_url + '/sites/DLE-IA-Forum/_api/web/GetFolderByServerRelativeUrl(' + "'" + full_folder + "'" + ')/Files'
-        response = requests.get(files_url, headers=self.header)
+        response = requests.get(files_url, headers=self.header, verify=False)
         for file in response.json()["d"]["results"]:
             print("    Files in folder {}  : {}".format(full_folder, file["Name"]))
 
@@ -135,10 +137,11 @@ class SharepointOnlineApi:
         full_folder = "Shared Documents/" + folder_name
         output_file_name = Path("P:\My Documents\DLE\github", file_name)
         file_url = self.sharepoint_url + '/sites/DLE-IA-Forum/_api/web/GetFolderByServerRelativeUrl(' + "'" + full_folder + "'" + ')/Files(' + "'" + file_name + "'" + ')/$value'
-        response = requests.get(file_url, headers=self.header)
+        response = requests.get(file_url, headers=self.header, verify=False)
         with open(output_file_name, "wb") as f:
             f.write(response.content)
         print("    File {} downloaded at {}".format(file_name, output_file_name))
+
 
 if __name__ == '__main__':
     sp_online_api = SharepointOnlineApi(url="https://anz.sharepoint.com")

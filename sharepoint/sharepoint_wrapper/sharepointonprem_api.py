@@ -39,7 +39,7 @@ class SharepointOnPremApi:
             print("Essential environment variables are not set. Please check user, and secret ")
             raise Exception
 
-        self.set_proxy()
+        #self.set_proxy()
         self.header = self.set_headers()
 
     def set_proxy(self):
@@ -64,10 +64,9 @@ class SharepointOnPremApi:
         return headers
 
     def get_cookies(self):
-        print("    Step2: Getting FedAuth cookie")
+        print("    Getting FedAuth cookie")
         cookies = ADFSAuth.Auth(self.sharepoint_url, self._user, self._secret, "GLOBAL")
         print("    Success in getting FedAuth cookie")
-        print(cookies.get_Item('FedAuth'))
         return str(cookies.get_Item('FedAuth'))
 
     def get_title(self, site):
@@ -77,16 +76,14 @@ class SharepointOnPremApi:
         print("    Title is : ", title)
 
     def get_files_in_folder(self, site,  folder_name):
-        full_folder = "Shared Documents/" + folder_name
-        files_url = self.sharepoint_url + site + '/_api/web/GetFolderByServerRelativeUrl(' + "'" + full_folder + "'" + ')/Files'
+        files_url = self.sharepoint_url + site + '/_api/web/GetFolderByServerRelativeUrl(' + "'" + folder_name + "'" + ')/Files'
         response = requests.get(files_url, headers=self.header, verify=False)
         for file in response.json()["d"]["results"]:
-            print("    Files in folder {}  : {}".format(full_folder, file["Name"]))
+            print("    Files in folder {}  : {}".format(folder_name, file["Name"]))
 
-    def download_file_from_folder(self, folder_name, file_name):
-        full_folder = "Shared Documents/" + folder_name
+    def download_file_from_folder(self, site, folder_name, file_name):
         output_file_name = Path("P:\My Documents\DLE\github", file_name)
-        file_url = self.sharepoint_url + '/sites/DLE-IA-Forum/_api/web/GetFolderByServerRelativeUrl(' + "'" + full_folder + "'" + ')/Files(' + "'" + file_name + "'" + ')/$value'
+        file_url = self.sharepoint_url + site + '/_api/web/GetFolderByServerRelativeUrl(' + "'" + folder_name + "'" + ')/Files(' + "'" + file_name + "'" + ')/$value'
         response = requests.get(file_url, headers=self.header, verify=False)
         with open(output_file_name, "wb") as f:
             f.write(response.content)
@@ -133,4 +130,4 @@ if __name__ == '__main__':
     print("Now running few inquiries on sharepoint on-premises")
     sp_onprem_api.get_title(args.site)
     sp_onprem_api.get_files_in_folder(args.site, args.folder)
-    #sp_onprem_api.download_file_from_folder(args.folder, args.ia)
+    sp_onprem_api.download_file_from_folder(args.site, args.folder, args.ia)

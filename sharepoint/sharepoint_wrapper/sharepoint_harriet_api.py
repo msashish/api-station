@@ -3,12 +3,14 @@ import os
 import argparse
 import harriet.cli
 
-from pathlib import Path
 import harriet.setup
+import urllib3
 
+from pathlib import Path
 logger = harriet.setup.get_logger()  # pylint: disable=locally-disabled, invalid-
 BST_START_TAG =  """<wsse:BinarySecurityToken Id="Compact0" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">"""
 BST_END_TAG = '</wsse:BinarySecurityToken>'
+urllib3.disable_warnings()
 
 
 class SharepointOnlineApi:
@@ -45,7 +47,7 @@ class SharepointOnlineApi:
         os.environ['https_proxy'] = _proxy
 
     def set_headers(self, email, password):
-        print('Setting header to http requests for user ', email)
+        #print('Setting header to http requests for user ', email)
         try:
             headers = {'Content-Type': 'application/x-www-form-urlencoded'}
 
@@ -117,29 +119,17 @@ class SharepointOnlineApi:
     def get_cookies(self, headers, security_token):
         print("    Step2: Getting FedAuth and rtFa cookies using security token")
         url = self.sharepoint_url + '/_forms/default.aspx?wa=wsignin1.0'
-        response = requests.post(url, data=security_token, headers=headers)
+        response = requests.post(url, data=security_token, headers=headers, verify=False)
         _Fedauth = 'FedAuth={}'.format(response.cookies['FedAuth'])
         _rtFa = 'rtFa={}'.format(response.cookies['rtFa'])
         return {'Cookie': _Fedauth + ';' + _rtFa}
 
-    def get_title(self):
-        title_url = self.sharepoint_url + '/sites/DLE-IA-Forum/_api/web/title'
-        response = requests.get(title_url, headers=self.header)
-        title = response.json()["d"]["Title"]
-        print("    Title is : ", title)
-
-    def get_file_names_in_folder(self, folder_name):
+    def get_file_from_folder(self, site, folder_name, file_name):
         full_folder = "Shared Documents/" + folder_name
-        files_url = self.sharepoint_url + '/sites/DLE-IA-Forum/_api/web/GetFolderByServerRelativeUrl(' + "'" + full_folder + "'" + ')/Files'
-        response = requests.get(files_url, headers=self.header)
-        for file in response.json()["d"]["results"]:
-            print("    Files in folder {}  : {}".format(full_folder, file["Name"]))
-
-    def get_file_from_folder(self, folder_name, file_name):
-        full_folder = "Shared Documents/" + folder_name
-        output_file_name = Path("P:\My Documents\DLE\github", file_name)
-        file_url = self.sharepoint_url + '/sites/DLE-IA-Forum/_api/web/GetFolderByServerRelativeUrl(' + "'" + full_folder + "'" + ')/Files(' + "'" + file_name + "'" + ')/$value'
-        response = requests.get(file_url, headers=self.header)
+        output_file_name = Path(os.getcwd(), file_name)
+        #file_url = self.sharepoint_url + '/sites/DLE-IA-Forum/_api/web/GetFolderByServerRelativeUrl(' + "'" + full_folder + "'" + ')/Files(' + "'" + file_name + "'" + ')/$value'
+        file_url = self.sharepoint_url + site + '/_api/web/GetFolderByServerRelativeUrl(' + "'" + full_folder + "'" + ')/Files(' + "'" + file_name + "'" + ')/$value'
+        response = requests.get(file_url, headers=self.header, verify=False)
         with open(output_file_name, "wb") as f:
             f.write(response.content)
         return output_file_name
@@ -158,7 +148,7 @@ def get_arguments() -> argparse.Namespace:
 
     parser = argparse.ArgumentParser(
         prog="python sharepoint_harriet_api.py",
-        usage="%(prog)s [-h] [--url] [--folder] [--ia]",
+        usage="%(prog)s [-h] [--url] [--site] [--folder] [--ia]",
     )
 
     parser.add_argument(
@@ -166,6 +156,12 @@ def get_arguments() -> argparse.Namespace:
         dest='url',
         type=str,
         default="https://anz.sharepoint.com"
+    )
+    parser.add_argument(
+        "--site", "-s",
+        dest='site',
+        type=str,
+        default="/sites/DLE-IA-Forum"
     )
     parser.add_argument(
         "--folder", "-f",
@@ -186,9 +182,13 @@ def get_arguments() -> argparse.Namespace:
 
 
 if __name__ == '__main__':
+    print("Starting sharepointOnline harriet api")
     args = get_arguments()
     sp_online_api = SharepointOnlineApi(url=args.url) #"https://anz.sharepoint.com"
     print("Processing IA {} inside folder {} at sharepoint {} ".format(args.ia, args.folder, args.url))
-    #input = sp_online_api.get_file_from_folder('test', 'IA_CAP_to_BIH_Batch_AU.xlsx')
-    input = sp_online_api.get_file_from_folder(args.folder, args.ia)
-    sp_online_api.call_harriet(input)
+    input = sp_online_api.get_file_from_folder(args.site, args.folder, args.ia)
+    if Path(input).is_file():
+        try:
+            sp_online_api.call_harriet(input)
+        finally:
+            os.remove(input)

@@ -5,8 +5,10 @@ import sys
 import argparse
 sys.path.append(os.getcwd())
 import clr
+import harriet.cli
 
 from pathlib import Path
+import harriet.setup
 
 clr.AddReference("ADFSAuth16")
 clr.AddReference("HtmlAgilityPack")
@@ -15,6 +17,7 @@ from ClaimAuth import *
 BST_START_TAG =  """<wsse:BinarySecurityToken Id="Compact0" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">"""
 BST_END_TAG = '</wsse:BinarySecurityToken>'
 urllib3.disable_warnings()
+logger = harriet.setup.get_logger()  # pylint: disable=locally-disabled, invalid-
 
 class SharepointOnPremApi:
     """
@@ -27,7 +30,6 @@ class SharepointOnPremApi:
             user should have access to sharepoint on-premises
             set user=<LAN id>
             set secret=<password>
-            I am using proxy https://gblproxy.lb.service.anz:80
     """
 
     def __init__(self, url="https://contentspace.global.anz.com"):
@@ -38,14 +40,7 @@ class SharepointOnPremApi:
         if None in (self._user, self._secret):
             print("Essential environment variables are not set. Please check user, and secret ")
             raise Exception
-
-        #self.set_proxy()
         self.header = self.set_headers()
-
-    def set_proxy(self):
-        _proxy = "https://{}:{}@gblproxy.lb.service.anz:80".format(self._user, self._secret)
-        os.environ['http_proxy'] = _proxy
-        os.environ['https_proxy'] = _proxy
 
     def set_headers(self):
         print('Setting header to http requests for user ', self._user)
@@ -56,7 +51,6 @@ class SharepointOnPremApi:
             # Update header so that we get response in json
             headers.update({'Content-Type': 'application/json; odata=verbose',
                             'Accept': 'application/json; odata=verbose'})
-            print("    Success")
         except Exception as e:
             print(str(e))
             raise e
@@ -81,13 +75,22 @@ class SharepointOnPremApi:
         for file in response.json()["d"]["results"]:
             print("    Files in folder {}  : {}".format(folder_name, file["Name"]))
 
-    def download_file_from_folder(self, site, folder_name, file_name):
-        output_file_name = Path("P:\My Documents\DLE\github", file_name)
+    def get_file_from_folder(self, site, folder_name, file_name):
+        output_file_name = Path(os.getcwd(), file_name)
         file_url = self.sharepoint_url + site + '/_api/web/GetFolderByServerRelativeUrl(' + "'" + folder_name + "'" + ')/Files(' + "'" + file_name + "'" + ')/$value'
         response = requests.get(file_url, headers=self.header, verify=False)
         with open(output_file_name, "wb") as f:
             f.write(response.content)
-        print("    File {} downloaded at {}".format(file_name, output_file_name))
+        # print("    File {} downloaded at {}".format(file_name, output_file_name))
+        return output_file_name
+
+    @staticmethod
+    def call_harriet(input_excel, output='output'):
+        print("Calling harriet")
+        args = argparse.Namespace()
+        args.excel = input_excel
+        args.base_path = output
+        harriet.cli.main(args)
 
 def get_arguments() -> argparse.Namespace:
     """ Return command line arguments."""
@@ -124,10 +127,16 @@ def get_arguments() -> argparse.Namespace:
 
     return parser.parse_args()
 
+
 if __name__ == '__main__':
     args = get_arguments()
     sp_onprem_api = SharepointOnPremApi(url=args.url)
     print("Now running few inquiries on sharepoint on-premises")
     sp_onprem_api.get_title(args.site)
     sp_onprem_api.get_files_in_folder(args.site, args.folder)
-    sp_onprem_api.download_file_from_folder(args.site, args.folder, args.ia)
+    input = sp_onprem_api.get_file_from_folder(args.site, args.folder, args.ia)
+    if Path(input).is_file():
+        try:
+            sp_onprem_api.call_harriet(input)
+        finally:
+            os.remove(input)

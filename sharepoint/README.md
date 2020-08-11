@@ -17,28 +17,22 @@
     export user='----'
     export secret='----'
 
-    export client_id="81cebe26-df96-4185-a6b6-a7307492d087"
-    export client_secret="joLi19zxx8x317jekWlf9CydqcYIL0wShlTNAHzgpJ0="
+
 
 # run tests
     cd sharepoint
     pytest tests/test_sharepoint_api.py -s
 
-    pwd --> /Users/sheelava/Documents/main/github/api-station/sharepoint
+    pwd to correct directory sharepoint
     python sharepoint_wrapper/sharepoint_api2.py
     python sharepoint_wrapper/sharepoint_api3.py
 
-## Sharepoint wrapper for sharepoint O365 (online) 
-
-    Sharepoint O365/Online is the cloud variant and can be reached at https://anz.sharepoint.com
-    
-    Link to sample IA site https://anz.sharepoint.com/sites/DLE-IA-Forum
     
 ## Setup below variables 
     
     On Windows   - avoid quotes
-        set user=    (give your Global user id. For ex: sheelava)  
-        set email=   (give your email id. For ex: ashish.sheelavantar@anz.com)
+        set user=    (give your Global user id.)  
+        set email=   (give your email id.)
         set secret=  (give your password)
         
     On Mac/*nix
@@ -49,9 +43,6 @@
 ## Run wrapper
 
     python sharepointonline_api.py
-
-    Copy sharepoint_harriet_api.py to harriet root directory (along side harriet.sh) and then, 
-    python sharepoint_harriet_api.py -u "https://anz.sharepoint.com" -s "/sites/DLE-IA-Forum" -f "test" -ia "IA_CAP_to_BIH_Batch_AU.xlsx"
 
 ## Pending improvements
     avoid proxy

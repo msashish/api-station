@@ -6,4 +6,4 @@
         set email=
         set secret=
         python sharepointonline_api.py
-        python sharepoint_harriet_api.py -u "https://anz.sharepoint.com" -f "test" -ia "IA_CAP_to_BIH_Batch_AU.xlsx"
+        python sharepoint_xyz.py -u "https://xyz.com" -f "test" -ia "abc.xlsx"

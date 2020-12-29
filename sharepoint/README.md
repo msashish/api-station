@@ -2,7 +2,7 @@
     1) Using add-in policy by accessing via postman
         https://docs.microsoft.com/en-us/sharepoint/dev/solution-guidance/security-apponly-azureacs
     
-    2) Uisng NTLM authorisation (not sure if setup in ANZ)
+    2) Using NTLM authorisation
     
     3) Using Office365-REST-Python-Client
     https://pypi.org/project/Office365-REST-Python-Client/

@@ -1,4 +1,5 @@
 # Basics: 
+
     1) Using add-in policy by accessing via postman
         https://docs.microsoft.com/en-us/sharepoint/dev/solution-guidance/security-apponly-azureacs
     
@@ -14,12 +15,12 @@
                 AuthenticationContext.ctx_auth.acquire_token_for_user(username, password)
 
 # Setup
+
     export user='----'
     export secret='----'
 
-
-
 # run tests
+
     cd sharepoint
     pytest tests/test_sharepoint_api.py -s
 
@@ -45,7 +46,7 @@
     python sharepointonline_api.py
 
 ## Pending improvements
-    avoid proxy
-    Try below libraries & reduce loc
+
+    Try below libraries & reduce loc (i mean make them work, thats all)
         Office365 --> https://pypi.org/project/Office365-REST-Python-Client/
         O365
